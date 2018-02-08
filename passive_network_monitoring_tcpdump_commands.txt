@@ -1,0 +1,966 @@
+ 1.1 How many packets does the trace contain?
+
+Answer:
+32664 packets.
+
+Command used:
+tcpdump -n -r hw1.pcap | wc -l
+ 
+
+
+ 1.2 How many ARP packets and how many UDP packets?
+
+Answer:
+11304 ARP packets and 18382 UDP packets.
+
+Commands used:
+tcpdump -n -r hw1.pcap arp | wc -l
+tcpdump -n -r hw1.pcap udp | wc -l
+ 
+
+
+ 1.3 How many packets were exchanged between 192.168.0.200 and 91.189.90.40?
+
+Answer:
+28 packets were exchanged between these IP addresses.
+
+Command used:
+tcpdump -n -r hw1.pcap "(ip src 192.168.0.200 && ip dst 91.189.90.40) || (ip src 91.189.90.40 && ip dst 192.168.0.200)" | wc -l
+ 
+
+
+ 1.4 Print the unique source IP addresses found in the trace. 
+
+Answer:
+The 33 unique source IP addresses are as follows:
+0.0.0.0
+1.234.31.20
+122.154.101.54
+130.75.16.5
+159.148.96.184
+169.254.56.55
+192.168.0.1
+192.168.0.10
+192.168.0.11
+192.168.0.12
+192.168.0.2
+192.168.0.200
+192.168.0.3
+192.168.0.5
+192.168.0.6
+192.168.0.7
+194.168.4.100
+216.137.63.121
+216.137.63.137
+46.51.197.88
+46.51.197.89
+62.252.170.81
+62.252.170.91
+87.230.23.162
+87.98.246.8
+91.189.88.33
+91.189.89.88
+91.189.90.40
+91.189.90.41
+91.189.91.14
+91.189.91.15
+91.189.92.190
+92.240.68.152
+
+Command used:
+tcpdump -n -r hw1.pcap ip | cut -d ' ' -f 3 | cut -d '.' -f 1-4 | sort | uniq
+#delimit by spaces - select just the third section == ip address; then select only first 4 fields by decimal (bytes) bc we don't want the port #
+
+
+
+ 1.5 Print the unique private network (according to RFC1918) source IP
+     addresses found in the trace. 
+
+Answer:
+The 10 unique private network source IP addresses are as follows:
+
+192.168.0.1
+192.168.0.10
+192.168.0.11
+192.168.0.12
+192.168.0.2
+192.168.0.200
+192.168.0.3
+192.168.0.5
+192.168.0.6
+192.168.0.7
+
+Approach used:
+Based on the three non-overlapping ranges of IPv4 addresses for private networks reserved in RCC 1918, I used egrep (allowing for ORs)
+and regular expressions to select only addresses within the desired ranges.
+The first part of the expression within egrep accounts for the addresses beginning with 10, the second for 192.168.*, and the third for 172.16.* - 172.31.*.
+Note that '/.' was used to make the . literal as opposed to the standard 'any character'.
+Command used:
+tcpdump -n -r hw1.pcap ip | cut -d ' ' -f 3 | cut -d '.' -f 1-4 | sort | uniq | egrep "10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3}|172.(1[6-9]|2[0-9]|3[0-1]).[.1-9]*"
+
+
+ 
+ 1.6 Print the unique destination IP addresses found in the trace. 
+
+Answer:
+The 31 unique destination IP addresses are as follows:
+1.234.31.20
+122.154.101.54
+130.75.16.5
+159.148.96.184
+169.254.255.255
+192.168.0.12
+192.168.0.200
+192.168.0.255
+194.168.4.100
+216.137.63.121
+216.137.63.137
+224.0.0.22
+224.0.0.251
+224.0.0.252
+224.0.0.253
+239.255.255.250
+255.255.255.255
+46.51.197.88
+46.51.197.89
+62.252.170.81
+62.252.170.91
+87.230.23.162
+87.98.246.8
+91.189.88.33
+91.189.89.88
+91.189.90.40
+91.189.90.41
+91.189.91.14
+91.189.91.15
+91.189.92.190
+92.240.68.152
+
+Command used:
+tcpdump -n -r hw1.pcap ip | cut -d ' ' -f 5 | cut -d ':' -f 1 | cut -d '.' -f 1-4 | sort | uniq
+#same as src but different section, and remove the colon at the end
+
+
+
+ 1.7 What are the top-5 TCP and top-5 UDP destination ports?
+
+Answer:
+The top-5 TCP destination ports are 80, 54634, 49836, 47110, and 40341, in that order.
+The top-5 UDP destination ports are 1900, 137, 5355, 5353, and 138, in that order.
+
+Approach and commands used:
+
+tcpdump -n -r hw1.pcap tcp | cut -d ' ' -f 5 | cut -d ':' -f 1 | cut -d '.' -f 5 | sort | uniq -c | sort -n | tail -5
+#get the dest port numbers for tcp packets, then sort, then uniq -c prepends the count of each, then sort these ascending numerically and get last/top 5.
+#This gives output:
+  36 40341
+  61 47110
+ 346 49836
+ 697 54634
+ 727 80
+#Which represents the top-5 TCP destination ports in reverse. Similarly, for UDP:
+
+tcpdump -n -r hw1.pcap udp | cut -d ' ' -f 5 | cut -d ':' -f 1 | cut -d '.' -f 5 | sort | uniq -c | sort -n | tail -5
+#This gives output:
+ 399 138
+ 840 5353
+1516 5355
+1925 137
+13178 1900
+#Which represents the top-5 UDP destination ports in reverse.
+
+
+ 
+ 1.8 How many TCP packets have the SYN flag set?
+
+Answer:
+75 TCP packets have the SYN flag set.
+
+Approach / command:
+#You can use the following command to select SYN TCP packets as shown in http://www.tcpdump.org/manpages/pcap-filter.7.html
+#The idea is you get the flags and AND them with the tcp-syn bit: the result should be nonzero if the bit was set.
+tcpdump -n -r hw1.pcap 'tcp[tcpflags] & tcp-syn != 0' | wc -l
+
+
+
+ 1.9 How many TCP connection attempts were made?
+
+Answer:
+37 TCP connection attempts were made.
+
+Approach / command:
+#A TCP 3-way handshake involves a SYN packet, a SYN/ACK packet, and an ACK packet. We just want to see how many of the first SYN-only packets
+#were sent in order to find how many attempts at a connection were made. So we want the SYN flag to be set and the ACK flag to be 0.
+tcpdump -n -r hw1.pcap '(tcp[tcpflags] & tcp-syn != 0) && (tcp[tcpflags] & tcp-ack == 0)' | wc -l
+
+ 
+
+ 1.10 Towards which ports were TCP connection attempts made? How many attempts
+     per port?
+
+Answer:
+Towards ports 443, 465, 80, and 9100.
+The attemps per port were 1, 1, 33, and 2, respectively.
+
+This was read from the output here:
+
+   1 443
+   1 465
+  33 80
+   2 9100
+
+For the following command used:
+tcpdump -n -r hw1.pcap '(tcp[tcpflags] & tcp-syn != 0) && (tcp[tcpflags] & tcp-ack == 0)' | cut -d ' ' -f 5 | cut -d ':' -f 1 | cut -d '.' -f 5 | sort | uniq -c
+#We take the SYN-only packets again (since these represent a connection ATTEMPT) and get the destination port numbers. We sort them, then use uniq -c to get
+#the unique ones and prepend the counts of each.
+
+
+ 
+ 1.11 How many HTTP GET requests were made? Print the URLs of all HTTP requests
+     for JPG files.
+
+Answer:
+94 HTTP GET requests were made.
+
+The URLs for JPG files are as follows:
+http://pic.leech.it/i/f166c/479246b0asttas.jpg
+/i/f166c/479246b0asttas.jpg
+http://ecx.images-amazon.com/images/I/41oZ1XsiOAL._SL500_AA300_.jpg
+http://www.nature.com/news/2009/090527/images/459492a-i1.0.jpg
+/news/2009/090527/images/459492a-i1.0.jpg
+
+
+Commands / approach used:
+
+tcpdump -n -r hw1.pcap '(tcp port 80) && (tcp[32:4] = 0x47455420)' | wc -l
+#The knowledge to use this command was based on the tutorial for advanced filtering here: https://www.wains.be/pub/networking/tcpdump_advanced_filters.txt
+#First of all, we want tcp http packets. Port 80 is for http (generally - could have said port http also).
+#Then, we need to look at bytes 32, 33, and 34 (where the header starts) to see the "GET". We can only look at 1, 2, or 4 though, so we take 4 bytes (tcp[32:4]).
+#We then check if it equals "GET " in hex, which is what we would expect. This value is 47455420.
+
+tcpdump -n -r hw1.pcap '(tcp port 80) && (tcp[32:4] = 0x47455420)' | grep jpg | rev | cut -d ' ' -f 2 | rev
+#This was used to print out the URLS of requests for JPG files. Basically, you take the HTTP GET requests and find which ones have 'jpg', and then
+#you cut everything but the URL section (reversed first and after bc it was 2nd from last and didn't want to count all of them).
+
+
+
+ 1.12 When (date and time) was the first and last packet of the trace sent?
+
+Answer:
+First packet: sent at 2013-01-12 12:37:42.871346
+Last packet: sent at 2013-01-14 14:27:03.691498
+
+Commands used:
+tcpdump -n -tttt -r hw1.pcap | head -1
+ #-tttt flag prints the timestamps. Take first and last.
+tcpdump -n -tttt -r hw1.pcap | tail -1
+
+
+
+ 1.13 What is the brand of the device that sent most of the packets? What is its
+     IP address?
+
+The brand of this device is NETGEAR.
+Its IP address is 192.168.0.1.
+
+Approach and commands used:
+
+#We want to find the most-used MAC source address. We use this command:
+
+tcpdump -n -e -r hw1.pcap | cut -d ' ' -f 2 | sort | uniq -c | sort -n | tail -1
+#the -e flag prints the link level header, and then we take the argument that is the source MAC address.
+#We then see how many unique ones there are and sort them, then take the max. This gives us the following output:
+
+19743 c4:3d:c7:17:6f:9b
+#So this MAC address corresponds to the device that sent the most packets - 19743 packets. We lookup the address here: https://macvendors.com/
+#This tells us that the device is of brand NETGEAR.
+
+
+To get IP address:
+tcpdump -n -r hw1.pcap ether src c4:3d:c7:17:6f:9b | head -5
+#We use ether src to see when the Ethernet source address is the desired MAC address.
+#The output, shown below, clearly shows us that the corresponding device has an IP address of 192.168.0.1.
+
+12:37:42.871346 ARP, Request who-has 192.168.0.12 tell 192.168.0.1, length 46
+12:38:02.227995 IP 192.168.0.1.1901 > 239.255.255.250.1900: UDP, length 300
+12:38:02.231699 IP 192.168.0.1.1901 > 239.255.255.250.1900: UDP, length 356
+12:38:02.234864 IP 192.168.0.1.1901 > 239.255.255.250.1900: UDP, length 284
+12:38:02.238093 IP 192.168.0.1.1901 > 239.255.255.250.1900: UDP, length 276
+
+
+
+ 1.14 Report the distribution of Ethernet packet sizes (how many packets of size
+     X exist in the trace, for all values of X in the trace).
+
+I used the following command:
+tcpdump -n -e -r hw1.pcap | cut -d ' ' -f 9 | cut -d ':' -f 1 | sort | uniq -c | sort -n > freq_list.txt
+#The -e flag is on so that we can see the link level header (since we want Ethernet packet sizes).
+#We then take the corresponding packet length value (the first cut command) and remove the colon at the end.
+#We then simply sort and prepend the counts of each size, and then sort again by count. Then we store this in a text file.
+
+#The result entails 218 unique packet sizes, preceded by their frequency:
+
+Freq Size
+   1 1102
+   1 1162
+   1 1170
+   1 1179
+   1 1218
+   1 144
+   1 1469
+   1 156
+   1 171
+   1 178
+   1 195
+   1 207
+   1 223
+   1 306
+   1 308
+   1 312
+   1 317
+   1 320
+   1 335
+   1 347
+   1 372
+   1 374
+   1 389
+   1 396
+   1 412
+   1 417
+   1 428
+   1 429
+   1 432
+   1 433
+   1 446
+   1 479
+   1 482
+   1 506
+   1 518
+   1 535
+   1 54
+   1 544
+   1 548
+   1 552
+   1 568
+   1 588
+   1 592
+   1 596
+   1 601
+   1 608
+   1 640
+   1 678
+   1 679
+   1 690
+   1 694
+   1 72
+   1 730
+   1 746
+   1 752
+   1 760
+   1 926
+   1 952
+   1 979
+   2 105
+   2 111
+   2 1212
+   2 129
+   2 184
+   2 208
+   2 220
+   2 229
+   2 236
+   2 252
+   2 255
+   2 257
+   2 261
+   2 265
+   2 266
+   2 268
+   2 288
+   2 294
+   2 305
+   2 309
+   2 310
+   2 321
+   2 383
+   2 418
+   2 478
+   2 502
+   2 546
+   2 550
+   2 590
+   2 593
+   2 598
+   2 607
+   2 611
+   2 612
+   2 614
+   2 615
+   2 621
+   2 624
+   2 630
+   2 636
+   2 704
+   2 77
+   2 93
+   2 94
+   2 95
+   3 233
+   3 247
+   3 269
+   3 298
+   3 344
+   3 497
+   3 70
+   4 1035
+   4 106
+   4 124
+   4 170
+   4 177
+   4 244
+   4 254
+   4 267
+   4 322
+   4 345
+   4 346
+   4 65
+   4 79
+   4 85
+   4 89
+   5 329
+   5 613
+   5 628
+   5 817
+   5 88
+   6 1034
+   6 264
+   6 282
+   6 333
+   6 350
+   6 610
+   6 69
+   6 76
+   7 125
+   7 149
+   7 328
+   8 68
+   8 75
+   8 816
+   9 248
+   9 284
+  10 107
+  10 154
+  10 330
+  10 332
+  10 476
+  10 485
+  10 528
+  10 540
+  10 542
+  10 556
+  11 142
+  12 168
+  12 307
+  12 666
+  13 489
+  13 62
+  13 90
+  14 87
+  15 127
+  15 302
+  16 245
+  17 202
+  17 551
+  22 246
+  22 698
+  24 315
+  24 42
+  28 119
+  32 602
+  33 460
+  36 231
+  39 219
+  40 1033
+  43 84
+  52 82
+  54 81
+  56 249
+  60 165
+  62 167
+  85 326
+  85 398
+  86 318
+  86 362
+  86 394
+  87 390
+  87 392
+  87 74
+  88 338
+  88 386
+ 121 120
+ 146 175
+ 155 541
+ 158 527
+ 161 555
+ 162 539
+ 164 475
+ 165 484
+ 180 110
+ 232 63
+ 279 243
+ 326 342
+ 341 91
+ 887 64
+1034 1514
+1046 66
+1740 92
+2749 340
+2758 405
+2759 395
+2773 331
+12190 60
+
+
+#If you want additional information:
+#Here it is in order of packet size:
+Freq Size
+  24 42
+   1 54
+12190 60
+  13 62
+ 232 63
+ 887 64
+   4 65
+1046 66
+   8 68
+   6 69
+   3 70
+   1 72
+  87 74
+   8 75
+   6 76
+   2 77
+   4 79
+  54 81
+  52 82
+  43 84
+   4 85
+  14 87
+   5 88
+   4 89
+  13 90
+ 341 91
+1740 92
+   2 93
+   2 94
+   2 95
+   2 105
+   4 106
+  10 107
+ 180 110
+   2 111
+  28 119
+ 121 120
+   4 124
+   7 125
+  15 127
+   2 129
+  11 142
+   1 144
+   7 149
+  10 154
+   1 156
+  60 165
+  62 167
+  12 168
+   4 170
+   1 171
+ 146 175
+   4 177
+   1 178
+   2 184
+   1 195
+  17 202
+   1 207
+   2 208
+  39 219
+   2 220
+   1 223
+   2 229
+  36 231
+   3 233
+   2 236
+ 279 243
+   4 244
+  16 245
+  22 246
+   3 247
+   9 248
+  56 249
+   2 252
+   4 254
+   2 255
+   2 257
+   2 261
+   6 264
+   2 265
+   2 266
+   4 267
+   2 268
+   3 269
+   6 282
+   9 284
+   2 288
+   2 294
+   3 298
+  15 302
+   2 305
+   1 306
+  12 307
+   1 308
+   2 309
+   2 310
+   1 312
+  24 315
+   1 317
+  86 318
+   1 320
+   2 321
+   4 322
+  85 326
+   7 328
+   5 329
+  10 330
+2773 331
+  10 332
+   6 333
+   1 335
+  88 338
+2749 340
+ 326 342
+   3 344
+   4 345
+   4 346
+   1 347
+   6 350
+  86 362
+   1 372
+   1 374
+   2 383
+  88 386
+   1 389
+  87 390
+  87 392
+  86 394
+2759 395
+   1 396
+  85 398
+2758 405
+   1 412
+   1 417
+   2 418
+   1 428
+   1 429
+   1 432
+   1 433
+   1 446
+  33 460
+ 164 475
+  10 476
+   2 478
+   1 479
+   1 482
+ 165 484
+  10 485
+  13 489
+   3 497
+   2 502
+   1 506
+   1 518
+ 158 527
+  10 528
+   1 535
+ 162 539
+  10 540
+ 155 541
+  10 542
+   1 544
+   2 546
+   1 548
+   2 550
+  17 551
+   1 552
+ 161 555
+  10 556
+   1 568
+   1 588
+   2 590
+   1 592
+   2 593
+   1 596
+   2 598
+   1 601
+  32 602
+   2 607
+   1 608
+   6 610
+   2 611
+   2 612
+   5 613
+   2 614
+   2 615
+   2 621
+   2 624
+   5 628
+   2 630
+   2 636
+   1 640
+  12 666
+   1 678
+   1 679
+   1 690
+   1 694
+  22 698
+   2 704
+   1 730
+   1 746
+   1 752
+   1 760
+   8 816
+   5 817
+   1 926
+   1 952
+   1 979
+  40 1033
+   6 1034
+   4 1035
+   1 1102
+   1 1162
+   1 1170
+   1 1179
+   2 1212
+   1 1218
+   1 1469
+1034 1514
+
+#In case you also want a distribution, I used a perl command to plot this as a sort of histogram:
+perl -lane 'print $F[1], "\t", "=" x ($F[0] / 6)' freq_list.txt
+
+42	====
+54	
+60	===============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+62	==
+63	======================================
+64	===================================================================================================================================================
+65	
+66	==============================================================================================================================================================================
+68	=
+69	=
+70	
+72	
+74	==============
+75	=
+76	=
+77	
+79	
+81	=========
+82	========
+84	=======
+85	
+87	==
+88	
+89	
+90	==
+91	========================================================
+92	==================================================================================================================================================================================================================================================================================================
+93	
+94	
+95	
+105	
+106	
+107	=
+110	==============================
+111	
+119	====
+120	====================
+124	
+125	=
+127	==
+129	
+142	=
+144	
+149	=
+154	=
+156	
+165	==========
+167	==========
+168	==
+170	
+171	
+175	========================
+177	
+178	
+184	
+195	
+202	==
+207	
+208	
+219	======
+220	
+223	
+229	
+231	======
+233	
+236	
+243	==============================================
+244	
+245	==
+246	===
+247	
+248	=
+249	=========
+252	
+254	
+255	
+257	
+261	
+264	=
+265	
+266	
+267	
+268	
+269	
+282	=
+284	=
+288	
+294	
+298	
+302	==
+305	
+306	
+307	==
+308	
+309	
+310	
+312	
+315	====
+317	
+318	==============
+320	
+321	
+322	
+326	==============
+328	=
+329	
+330	=
+331	==============================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+332	=
+333	=
+335	
+338	==============
+340	==========================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+342	======================================================
+344	
+345	
+346	
+347	
+350	=
+362	==============
+372	
+374	
+383	
+386	==============
+389	
+390	==============
+392	==============
+394	==============
+395	===========================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+396	
+398	==============
+405	===========================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+412	
+417	
+418	
+428	
+429	
+432	
+433	
+446	
+460	=====
+475	===========================
+476	=
+478	
+479	
+482	
+484	===========================
+485	=
+489	==
+497	
+502	
+506	
+518	
+527	==========================
+528	=
+535	
+539	===========================
+540	=
+541	=========================
+542	=
+544	
+546	
+548	
+550	
+551	==
+552	
+555	==========================
+556	=
+568	
+588	
+590	
+592	
+593	
+596	
+598	
+601	
+602	=====
+607	
+608	
+610	=
+611	
+612	
+613	
+614	
+615	
+621	
+624	
+628	
+630	
+636	
+640	
+666	==
+678	
+679	
+690	
+694	
+698	===
+704	
+730	
+746	
+752	
+760	
+816	=
+817	
+926	
+952	
+979	
+1033	======
+1034	=
+1035	
+1102	
+1162	
+1170	
+1179	
+1212	
+1218	
+1469	
+1514	============================================================================================================================================================================

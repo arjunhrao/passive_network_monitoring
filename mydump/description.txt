@@ -1,0 +1,123 @@
+Arjun Rao
+110487056
+CSE 508 HW2 Description
+
+As requested, my program captures traffic from a network interface (specified or automatically chosen) or reads
+from a file. It then "prints a record containing the timestamp, source and destination MAC address, EtherType, packet length, source and destination IP address and port, protocol type, and payload" given that, if a string is specified
+with the -s flag, the string occurs in the packet.
+
+Only Ethernet is supported. Within that, IPV4 - TCP, ICMP, and UDP are supported for the full record information.
+Only basic information such as time, MAC addresses, and raw payload are printed for ARP and Other packets.
+
+In main(), the arguments are parsed. An interface is chosen or specified, or a file is read.
+An appropriate BPF filter is set if an expression is specified.
+
+Much of the procedure is modeled after the sniffex.c program found here: http://www.tcpdump.org/sniffex.c
+pcap_loop() was used to examine packets, and got_packet() was the associated callback function. got_packet()
+checks for the search string argument, and if it occurs or is null, calls print_packet() with appropriate arguments.
+print_packet() prints the aforementioned record information.
+
+The -h flag prints a help menu with a description of usage.
+
+The hw1.pcap file was used for testing, as was the default interface and choosing an interface (on my VM, this was ens33).
+
+Some helpful links I used:
+http://www.tcpdump.org/pcap.html
+http://www.tcpdump.org/sniffex.c
+https://www.tutorialspoint.com/c_standard_library/c_function_isprint.htm
+https://opensource.apple.com/source/tcl/tcl-10/tcl/compat/strstr.c.auto.html
+https://www.cyberciti.biz/faq/show-ethernet-adapter-ubuntu-linux/
+http://www.tcpdump.org/manpages/pcap_lookupdev.3pcap.html
+http://www.tcpdump.org/manpages/pcap_open_offline.3pcap.html
+
+
+Some Test Cases and Output
+
+1. ./mydump -r hw1.pcap icmp
+
+Mon Jan 14 09:42:31 2013 | MAC: c4:3d:c7:17:6f:9b -> 00:0c:29:e9:94:8e | Type: 0x0800 | ICMP | pkt len: 76 | IP Addresses: 1.234.31.20 -> 192.168.0.200 | Payload (48 bytes): 
+00000   45 00 00 30 00 00 40 00  2e 06 6a 5a c0 a8 00 c8    E..0..@...jZ....
+00016   01 ea 1f 14 00 50 7b 81  bd cd 09 c6 3a 35 22 b0    .....P{.....:5".
+00032   70 12 39 08 11 ab 00 00  02 04 05 b4 01 01 04 02    p.9.............
+
+
+2. ./mydump -r hw1.pcap -s schemas-wifialliance udp
+
+(Output truncated due to length)
+
+Mon Jan 14 07:46:25 2013 | MAC: c4:3d:c7:17:6f:9b -> 01:00:5e:7f:ff:fa | Type: 0x0800 | UDP | len 381 IP addresses and port #s: 192.168.0.1.1900 -> 239.255.255.250.1900 | Payload (353 bytes):
+00000   4e 4f 54 49 46 59 20 2a  20 48 54 54 50 2f 31 2e    NOTIFY * HTTP/1.
+00016   31 0d 0a 48 6f 73 74 3a  20 32 33 39 2e 32 35 35    1..Host: 239.255
+00032   2e 32 35 35 2e 32 35 30  3a 31 39 30 30 0d 0a 43    .255.250:1900..C
+00048   61 63 68 65 2d 43 6f 6e  74 72 6f 6c 3a 20 6d 61    ache-Control: ma
+00064   78 2d 61 67 65 3d 36 30  0d 0a 4c 6f 63 61 74 69    x-age=60..Locati
+00080   6f 6e 3a 20 68 74 74 70  3a 2f 2f 31 39 32 2e 31    on: http://192.1
+00096   36 38 2e 30 2e 31 3a 31  39 30 30 2f 57 46 41 44    68.0.1:1900/WFAD
+00112   65 76 69 63 65 2e 78 6d  6c 0d 0a 4e 54 53 3a 20    evice.xml..NTS: 
+00128   73 73 64 70 3a 61 6c 69  76 65 0d 0a 53 65 72 76    ssdp:alive..Serv
+00144   65 72 3a 20 50 4f 53 49  58 2c 20 55 50 6e 50 2f    er: POSIX, UPnP/
+00160   31 2e 30 20 42 72 6f 61  64 63 6f 6d 20 55 50 6e    1.0 Broadcom UPn
+00176   50 20 53 74 61 63 6b 2f  65 73 74 69 6d 61 74 69    P Stack/estimati
+00192   6f 6e 20 31 2e 30 30 0d  0a 4e 54 3a 20 75 72 6e    on 1.00..NT: urn
+00208   3a 73 63 68 65 6d 61 73  2d 77 69 66 69 61 6c 6c    :schemas-wifiall
+00224   69 61 6e 63 65 2d 6f 72  67 3a 64 65 76 69 63 65    iance-org:device
+00240   3a 57 46 41 44 65 76 69  63 65 3a 31 0d 0a 55 53    :WFADevice:1..US
+00256   4e 3a 20 75 75 69 64 3a  46 35 31 39 33 39 30 41    N: uuid:F519390A
+00272   2d 34 34 44 44 2d 32 39  35 38 2d 36 32 33 37 2d    -44DD-2958-6237-
+00288   45 41 33 37 42 39 38 37  43 33 46 44 3a 3a 75 72    EA37B987C3FD::ur
+00304   6e 3a 73 63 68 65 6d 61  73 2d 77 69 66 69 61 6c    n:schemas-wifial
+00320   6c 69 61 6e 63 65 2d 6f  72 67 3a 64 65 76 69 63    liance-org:devic
+00336   65 3a 57 46 41 44 65 76  69 63 65 3a 31 0d 0a 0d    e:WFADevice:1...
+00352   0a                                                  .
+
+
+3. sudo ./mydump -s nytimes
+
+(Truncated Output: occurs when you access nytimes.com, the program waits)
+
+Sun Oct 15 13:43:46 2017 | MAC: 00:0c:29:8e:05:e8 -> 00:50:56:e9:6a:38 | Type: 0x0800 | TCP | pkt len: 410 | IP Addresses and port #s: 172.16.96.128.45566 -> 151.101.193.164.80 | Payload (370 bytes): 
+00000   47 45 54 20 2f 20 48 54  54 50 2f 31 2e 31 0d 0a    GET / HTTP/1.1..
+00016   48 6f 73 74 3a 20 6e 79  74 69 6d 65 73 2e 63 6f    Host: nytimes.co
+00032   6d 0d 0a 43 6f 6e 6e 65  63 74 69 6f 6e 3a 20 6b    m..Connection: k
+00048   65 65 70 2d 61 6c 69 76  65 0d 0a 55 70 67 72 61    eep-alive..Upgra
+00064   64 65 2d 49 6e 73 65 63  75 72 65 2d 52 65 71 75    de-Insecure-Requ
+00080   65 73 74 73 3a 20 31 0d  0a 55 73 65 72 2d 41 67    ests: 1..User-Ag
+00096   65 6e 74 3a 20 4d 6f 7a  69 6c 6c 61 2f 35 2e 30    ent: Mozilla/5.0
+00112   20 28 58 31 31 3b 20 4c  69 6e 75 78 20 78 38 36     (X11; Linux x86
+00128   5f 36 34 29 20 41 70 70  6c 65 57 65 62 4b 69 74    _64) AppleWebKit
+00144   2f 35 33 37 2e 33 36 20  28 4b 48 54 4d 4c 2c 20    /537.36 (KHTML, 
+00160   6c 69 6b 65 20 47 65 63  6b 6f 29 20 43 68 72 6f    like Gecko) Chro
+00176   6d 65 2f 36 31 2e 30 2e  33 31 36 33 2e 31 30 30    me/61.0.3163.100
+00192   20 53 61 66 61 72 69 2f  35 33 37 2e 33 36 0d 0a     Safari/537.36..
+00208   41 63 63 65 70 74 3a 20  74 65 78 74 2f 68 74 6d    Accept: text/htm
+00224   6c 2c 61 70 70 6c 69 63  61 74 69 6f 6e 2f 78 68    l,application/xh
+00240   74 6d 6c 2b 78 6d 6c 2c  61 70 70 6c 69 63 61 74    tml+xml,applicat
+00256   69 6f 6e 2f 78 6d 6c 3b  71 3d 30 2e 39 2c 69 6d    ion/xml;q=0.9,im
+00272   61 67 65 2f 77 65 62 70  2c 69 6d 61 67 65 2f 61    age/webp,image/a
+00288   70 6e 67 2c 2a 2f 2a 3b  71 3d 30 2e 38 0d 0a 41    png,*/*;q=0.8..A
+00304   63 63 65 70 74 2d 45 6e  63 6f 64 69 6e 67 3a 20    ccept-Encoding: 
+00320   67 7a 69 70 2c 20 64 65  66 6c 61 74 65 0d 0a 41    gzip, deflate..A
+00336   63 63 65 70 74 2d 4c 61  6e 67 75 61 67 65 3a 20    ccept-Language: 
+00352   65 6e 2d 55 53 2c 65 6e  3b 71 3d 30 2e 38 0d 0a    en-US,en;q=0.8..
+00368   0d 0a
+
+
+4. sudo ./mydump -s nytimes -i ens33
+
+(Does the same thing as case 4, except the interface used is explicitly requested)
+
+
+5. sudo ./mydump -s nytimes -i ens33 -r hw1.pcap
+
+ERROR: Either an interface, a file, or neither can be provided (in which case interface is the default) but NOT BOTH.
+
+
+6. ./mydump -r hw1.pcap arp
+
+(Output: Only last packet shown due to length)
+
+Mon Jan 14 10:27:03 2013 | MAC: c4:3d:c7:17:6f:9b -> ff:ff:ff:ff:ff:ff | Type: 0x0806 | ARP
+Raw Payload preview: 
+00000   00 01 08 00 06 04 00 01  c4 3d c7 17 6f 9b c0 a8    .........=..o...
+00016   00 01 00 00 00 00 00 00  c0 a8 00 0c 00 00 00 00    ................
+00032   00 00 00 00 00 00 00 00  00 00 00 00 00 00          ..............
